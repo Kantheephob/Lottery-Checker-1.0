@@ -1,6 +1,8 @@
 "use client"
 
-import { useState } from "react"
+import type React from "react"
+
+import { useState, useRef, type KeyboardEvent } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { createClient } from "@/lib/supabase/client"
@@ -23,6 +25,25 @@ export function LotteryForm() {
   const [topPermutation, setTopPermutation] = useState("")
   const [bottomStraight, setBottomStraight] = useState("")
   const [bottomPermutation, setBottomPermutation] = useState("")
+
+  const buyerRef = useRef<HTMLInputElement>(null)
+  const numberRef = useRef<HTMLInputElement>(null)
+  const topStraightRef = useRef<HTMLInputElement>(null)
+  const topPermutationRef = useRef<HTMLInputElement>(null)
+  const bottomStraightRef = useRef<HTMLInputElement>(null)
+  const bottomPermutationRef = useRef<HTMLInputElement>(null)
+
+  const handleKeyDown = (
+    e: KeyboardEvent<HTMLInputElement>,
+    nextRef: React.RefObject<HTMLInputElement | null> | null,
+  ) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+      if (nextRef?.current) {
+        nextRef.current.focus()
+      }
+    }
+  }
 
   const handleBuyerChange = (value: string) => {
     // Allow empty or valid name (not starting with number)
@@ -123,6 +144,10 @@ export function LotteryForm() {
       const orderId = orderData.order_id
       console.log("[v0] Created order:", orderId)
 
+      const is3Digit = number.length === 3
+      const topCategory = is3Digit ? "3_top" : "2_top"
+      const bottomCategory = is3Digit ? "3_bottom" : "2_bottom"
+
       // 4. Create bets for each non-empty field
       const betsToInsert = []
 
@@ -130,7 +155,7 @@ export function LotteryForm() {
         betsToInsert.push({
           order_id: orderId,
           bet_number: Number.parseInt(number),
-          category: "3_top",
+          category: topCategory,
           bet_type: "direct",
           amount: Number.parseInt(topStraight),
         })
@@ -140,7 +165,7 @@ export function LotteryForm() {
         betsToInsert.push({
           order_id: orderId,
           bet_number: Number.parseInt(number),
-          category: "3_top",
+          category: topCategory,
           bet_type: "indirect",
           amount: Number.parseInt(topPermutation),
         })
@@ -150,7 +175,7 @@ export function LotteryForm() {
         betsToInsert.push({
           order_id: orderId,
           bet_number: Number.parseInt(number),
-          category: "3_bottom",
+          category: bottomCategory,
           bet_type: "direct",
           amount: Number.parseInt(bottomStraight),
         })
@@ -160,7 +185,7 @@ export function LotteryForm() {
         betsToInsert.push({
           order_id: orderId,
           bet_number: Number.parseInt(number),
-          category: "3_bottom",
+          category: bottomCategory,
           bet_type: "indirect",
           amount: Number.parseInt(bottomPermutation),
         })
@@ -198,97 +223,132 @@ export function LotteryForm() {
   }
 
   return (
-    <div className="bg-white/10 backdrop-blur-sm p-6 space-y-6 rounded-lg">
+    <div className="bg-white/10 backdrop-blur-sm p-4 md:p-6 space-y-4 md:space-y-6 rounded-lg">
       {/* Input section */}
-      <div className="flex items-center gap-8">
-        <div className="flex items-center gap-3">
-          <label className="bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold text-base">ผู้ซื้อ</label>
-          <span className="text-white text-xl">:</span>
+      <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-8">
+        <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto">
+          <label className="bg-gray-600 text-white px-4 md:px-6 py-2 rounded-lg font-semibold text-sm md:text-base whitespace-nowrap">
+            ผู้ซื้อ
+          </label>
+          <span className="text-white text-xl hidden md:inline">:</span>
           <Input
+            ref={buyerRef}
             value={buyer}
             onChange={(e) => handleBuyerChange(e.target.value)}
-            className="w-80 bg-[#e8ecf0] border-0 text-gray-900 text-base"
+            onKeyDown={(e) => handleKeyDown(e, numberRef)}
+            className="flex-1 md:w-80 bg-white border-0 text-gray-900 text-sm md:text-base"
+            style={{ colorScheme: "light" }}
             placeholder="ชื่อผู้ซื้อ"
           />
         </div>
-        <div className="flex items-center gap-3">
-          <label className="bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold text-base">เลขหวย</label>
-          <span className="text-white text-xl">:</span>
+        <div className="flex items-center gap-2 md:gap-3 w-full md:w-auto">
+          <label className="bg-gray-600 text-white px-4 md:px-6 py-2 rounded-lg font-semibold text-sm md:text-base whitespace-nowrap">
+            เลขหวย
+          </label>
+          <span className="text-white text-xl hidden md:inline">:</span>
           <Input
+            ref={numberRef}
             value={number}
             onChange={(e) => handleNumberChange(e.target.value)}
-            className="w-80 bg-[#e8ecf0] border-0 text-gray-900 text-base"
+            onKeyDown={(e) => handleKeyDown(e, topStraightRef)}
+            className="flex-1 md:w-80 bg-white border-0 text-gray-900 text-sm md:text-base"
+            style={{ colorScheme: "light" }}
             placeholder="2-3 หลัก"
           />
         </div>
       </div>
 
       {/* Grid section */}
-      <div className="border-2 border-gray-500">
-        <div className="grid grid-cols-3">
+      <div className="border-2 border-gray-500 overflow-x-auto">
+        <div className="grid grid-cols-3 min-w-[300px]">
           {/* Empty top-left cell */}
           <div className="border-r-2 border-b-2 border-gray-500 bg-gray-800/30"></div>
 
           {/* Column headers */}
-          <div className="border-r-2 border-b-2 border-gray-500 flex items-center justify-center p-4 bg-gray-800/30">
-            <span className="bg-gray-600 text-white px-8 py-2 rounded-lg font-semibold text-lg">ตรง</span>
+          <div className="border-r-2 border-b-2 border-gray-500 flex items-center justify-center p-2 md:p-4 bg-gray-800/30">
+            <span className="bg-gray-600 text-white px-4 md:px-8 py-1.5 md:py-2 rounded-lg font-semibold text-sm md:text-lg">
+              ตรง
+            </span>
           </div>
-          <div className="border-b-2 border-gray-500 flex items-center justify-center p-4 bg-gray-800/30">
-            <span className="bg-gray-600 text-white px-8 py-2 rounded-lg font-semibold text-lg">โต๊ด</span>
+          <div className="border-b-2 border-gray-500 flex items-center justify-center p-2 md:p-4 bg-gray-800/30">
+            <span className="bg-gray-600 text-white px-4 md:px-8 py-1.5 md:py-2 rounded-lg font-semibold text-sm md:text-lg">
+              โต๊ด
+            </span>
           </div>
 
           {/* Row 1: บน */}
-          <div className="border-r-2 border-b-2 border-gray-500 flex items-center justify-center p-4 bg-gray-800/30">
-            <span className="bg-gray-600 text-white px-8 py-2 rounded-lg font-semibold text-lg">บน</span>
+          <div className="border-r-2 border-b-2 border-gray-500 flex items-center justify-center p-2 md:p-4 bg-gray-800/30">
+            <span className="bg-gray-600 text-white px-4 md:px-8 py-1.5 md:py-2 rounded-lg font-semibold text-sm md:text-lg">
+              บน
+            </span>
           </div>
-          <div className="border-r-2 border-b-2 border-gray-500 flex items-center justify-center p-4 bg-gray-800/30">
+          <div className="border-r-2 border-b-2 border-gray-500 flex items-center justify-center p-2 md:p-4 bg-gray-800/30">
             <Input
+              ref={topStraightRef}
               value={topStraight}
               onChange={(e) => handleTableInputChange(e.target.value, setTopStraight)}
-              className="w-32 text-center bg-[#e8ecf0] border-0 text-gray-900"
+              onKeyDown={(e) => handleKeyDown(e, topPermutationRef)}
+              className="w-20 md:w-32 text-center bg-white border-0 text-gray-900 text-sm md:text-base"
+              style={{ colorScheme: "light" }}
             />
           </div>
-          <div className="border-b-2 border-gray-500 flex items-center justify-center p-4 bg-gray-800/30">
+          <div className="border-b-2 border-gray-500 flex items-center justify-center p-2 md:p-4 bg-gray-800/30">
             <Input
+              ref={topPermutationRef}
               value={topPermutation}
               onChange={(e) => handleTableInputChange(e.target.value, setTopPermutation)}
-              className="w-32 text-center bg-[#e8ecf0] border-0 text-gray-900"
+              onKeyDown={(e) => handleKeyDown(e, bottomStraightRef)}
+              className="w-20 md:w-32 text-center bg-white border-0 text-gray-900 text-sm md:text-base"
+              style={{ colorScheme: "light" }}
             />
           </div>
 
           {/* Row 2: ล่าง */}
-          <div className="border-r-2 border-gray-500 flex items-center justify-center p-4 bg-gray-800/30">
-            <span className="bg-gray-600 text-white px-8 py-2 rounded-lg font-semibold text-lg">ล่าง</span>
+          <div className="border-r-2 border-gray-500 flex items-center justify-center p-2 md:p-4 bg-gray-800/30">
+            <span className="bg-gray-600 text-white px-4 md:px-8 py-1.5 md:py-2 rounded-lg font-semibold text-sm md:text-lg">
+              ล่าง
+            </span>
           </div>
-          <div className="border-r-2 border-gray-500 flex items-center justify-center p-4 bg-gray-800/30">
+          <div className="border-r-2 border-gray-500 flex items-center justify-center p-2 md:p-4 bg-gray-800/30">
             <Input
+              ref={bottomStraightRef}
               value={bottomStraight}
               onChange={(e) => handleTableInputChange(e.target.value, setBottomStraight)}
-              className="w-32 text-center bg-[#e8ecf0] border-0 text-gray-900"
+              onKeyDown={(e) => handleKeyDown(e, bottomPermutationRef)}
+              className="w-20 md:w-32 text-center bg-white border-0 text-gray-900 text-sm md:text-base"
+              style={{ colorScheme: "light" }}
             />
           </div>
-          <div className="flex items-center justify-center p-4 bg-gray-800/30">
+          <div className="flex items-center justify-center p-2 md:p-4 bg-gray-800/30">
             <Input
+              ref={bottomPermutationRef}
               value={bottomPermutation}
               onChange={(e) => handleTableInputChange(e.target.value, setBottomPermutation)}
-              className="w-32 text-center bg-[#e8ecf0] border-0 text-gray-900"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault()
+                  handleAdd()
+                }
+              }}
+              className="w-20 md:w-32 text-center bg-white border-0 text-gray-900 text-sm md:text-base"
+              style={{ colorScheme: "light" }}
             />
           </div>
         </div>
       </div>
 
       {/* Action buttons */}
-      <div className="flex justify-between">
+      <div className="flex justify-between gap-4">
         <Button
           onClick={handleClear}
           variant="destructive"
-          className="bg-red-500 hover:bg-red-600 text-white px-12 py-3 rounded-lg font-semibold text-lg"
+          className="bg-red-500 hover:bg-red-600 text-white px-6 md:px-12 py-2 md:py-3 rounded-lg font-semibold text-base md:text-lg"
         >
           ล้าง
         </Button>
         <Button
           onClick={handleAdd}
-          className="bg-[#00d969] hover:bg-[#00c05d] text-white px-12 py-3 rounded-lg font-semibold text-lg"
+          className="bg-[#00d969] hover:bg-[#00c05d] text-white px-6 md:px-12 py-2 md:py-3 rounded-lg font-semibold text-base md:text-lg"
         >
           เพิ่ม
         </Button>

@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useState, useRef, type KeyboardEvent } from "react"
 
 export default function LoginPage() {
   const [username, setUsername] = useState("")
@@ -14,6 +14,25 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  
+  const usernameRef = useRef<HTMLInputElement>(null)
+  const passwordRef = useRef<HTMLInputElement>(null)
+
+  const handleKeyDown = (
+    e: KeyboardEvent<HTMLInputElement>,
+    nextRef?: React.RefObject<HTMLInputElement | null>,
+  ) => {
+    if (e.key === "Enter") {
+      e.preventDefault()
+
+      if (nextRef?.current) {
+        nextRef.current.focus()
+      } else {
+        // ช่องสุดท้าย → submit
+        handleLogin(e as unknown as React.FormEvent)
+      }
+    }
+  }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -66,19 +85,23 @@ export default function LoginPage() {
           <form onSubmit={handleLogin} className="flex flex-col gap-6">
             <div className="flex flex-col gap-4">
               <Input
+                ref={usernameRef}
                 type="text"
                 placeholder="Username"
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
+                onKeyDown={(e) => handleKeyDown(e, passwordRef)}
                 className="h-16 rounded-3xl bg-zinc-600 border-0 text-white placeholder:text-zinc-300 text-lg px-6"
               />
               <Input
+                ref={passwordRef}
                 type="password"
                 placeholder="Password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                onKeyDown={(e) => handleKeyDown(e)}
                 className="h-16 rounded-3xl bg-zinc-600 border-0 text-white placeholder:text-zinc-300 text-lg px-6"
               />
             </div>

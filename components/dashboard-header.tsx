@@ -19,21 +19,19 @@ type BetLimit = {
 export function DashboardHeader() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [maxBets, setMaxBets] = useState({
-    threeTop: { left: 0, right: 0 },
-    threeBottom: { left: 0, right: 0 },
-    twoTop: { left: 0, right: 0 },
-    twoBottom: { left: 0, right: 0 },
+    threeTopDirect: 0,
+    threeTopIndirect: 0,
+    threeBottomDirect: 0,
+    twoTopDirect: 0,
+    twoBottomDirect: 0,
   })
   const [tempMaxBets, setTempMaxBets] = useState(maxBets)
 
-  const threeTopLeftRef = useRef<HTMLInputElement>(null)
-  const threeTopRightRef = useRef<HTMLInputElement>(null)
-  const threeBottomLeftRef = useRef<HTMLInputElement>(null)
-  const threeBottomRightRef = useRef<HTMLInputElement>(null)
-  const twoTopLeftRef = useRef<HTMLInputElement>(null)
-  const twoTopRightRef = useRef<HTMLInputElement>(null)
-  const twoBottomLeftRef = useRef<HTMLInputElement>(null)
-  const twoBottomRightRef = useRef<HTMLInputElement>(null)
+  const threeTopDirectRef = useRef<HTMLInputElement>(null)
+  const threeTopIndirectRef = useRef<HTMLInputElement>(null)
+  const threeBottomDirectRef = useRef<HTMLInputElement>(null)
+  const twoTopDirectRef = useRef<HTMLInputElement>(null)
+  const twoBottomDirectRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     loadBetLimits()
@@ -49,30 +47,25 @@ export function DashboardHeader() {
       if (data) {
         const limits = data as BetLimit[]
         const newMaxBets = {
-          threeTop: { left: 0, right: 0 },
-          threeBottom: { left: 0, right: 0 },
-          twoTop: { left: 0, right: 0 },
-          twoBottom: { left: 0, right: 0 },
+          threeTopDirect: 0,
+          threeTopIndirect: 0,
+          threeBottomDirect: 0,
+          twoTopDirect: 0,
+          twoBottomDirect: 0,
         }
 
         limits.forEach((limit) => {
           const amount = limit.max_amount
           if (limit.category === "3_top" && limit.bet_type === "direct") {
-            newMaxBets.threeTop.left = amount
+            newMaxBets.threeTopDirect = amount
           } else if (limit.category === "3_top" && limit.bet_type === "indirect") {
-            newMaxBets.threeTop.right = amount
+            newMaxBets.threeTopIndirect = amount
           } else if (limit.category === "3_bottom" && limit.bet_type === "direct") {
-            newMaxBets.threeBottom.left = amount
-          } else if (limit.category === "3_bottom" && limit.bet_type === "indirect") {
-            newMaxBets.threeBottom.right = amount
+            newMaxBets.threeBottomDirect = amount
           } else if (limit.category === "2_top" && limit.bet_type === "direct") {
-            newMaxBets.twoTop.left = amount
-          } else if (limit.category === "2_top" && limit.bet_type === "indirect") {
-            newMaxBets.twoTop.right = amount
+            newMaxBets.twoTopDirect = amount
           } else if (limit.category === "2_bottom" && limit.bet_type === "direct") {
-            newMaxBets.twoBottom.left = amount
-          } else if (limit.category === "2_bottom" && limit.bet_type === "indirect") {
-            newMaxBets.twoBottom.right = amount
+            newMaxBets.twoBottomDirect = amount
           }
         })
 
@@ -98,16 +91,12 @@ export function DashboardHeader() {
     try {
       const supabase = createClient()
 
-      // Update all bet limits
       const updates = [
-        { category: "3_top", bet_type: "direct", max_amount: tempMaxBets.threeTop.left },
-        { category: "3_top", bet_type: "indirect", max_amount: tempMaxBets.threeTop.right },
-        { category: "3_bottom", bet_type: "direct", max_amount: tempMaxBets.threeBottom.left },
-        { category: "3_bottom", bet_type: "indirect", max_amount: tempMaxBets.threeBottom.right },
-        { category: "2_top", bet_type: "direct", max_amount: tempMaxBets.twoTop.left },
-        { category: "2_top", bet_type: "indirect", max_amount: tempMaxBets.twoTop.right },
-        { category: "2_bottom", bet_type: "direct", max_amount: tempMaxBets.twoBottom.left },
-        { category: "2_bottom", bet_type: "indirect", max_amount: tempMaxBets.twoBottom.right },
+        { category: "3_top", bet_type: "direct", max_amount: tempMaxBets.threeTopDirect },
+        { category: "3_top", bet_type: "indirect", max_amount: tempMaxBets.threeTopIndirect },
+        { category: "3_bottom", bet_type: "direct", max_amount: tempMaxBets.threeBottomDirect },
+        { category: "2_top", bet_type: "direct", max_amount: tempMaxBets.twoTopDirect },
+        { category: "2_bottom", bet_type: "direct", max_amount: tempMaxBets.twoBottomDirect },
       ]
 
       for (const update of updates) {
@@ -129,12 +118,12 @@ export function DashboardHeader() {
     }
   }
 
-  const handleInputChange = (category: keyof typeof tempMaxBets, side: "left" | "right", value: string) => {
+  const handleInputChange = (key: keyof typeof tempMaxBets, value: string) => {
     const numValue = Number.parseInt(value)
     if (value === "" || (numValue >= 0 && !Number.isNaN(numValue))) {
       setTempMaxBets({
         ...tempMaxBets,
-        [category]: { ...tempMaxBets[category], [side]: value === "" ? 0 : numValue },
+        [key]: value === "" ? 0 : numValue,
       })
     }
   }
@@ -185,25 +174,25 @@ export function DashboardHeader() {
           <div className="flex items-center bg-gray-600 rounded-full overflow-hidden">
             <span className="px-3 md:px-4 py-1 md:py-1.5 text-white font-medium">3 ตัวบน:</span>
             <span className="px-3 md:px-4 py-1 md:py-1.5 bg-[#00cc00] text-white font-medium">
-              {maxBets.threeTop.left} × {maxBets.threeTop.right}
+              {maxBets.threeTopDirect} × {maxBets.threeTopIndirect}
             </span>
           </div>
           <div className="flex items-center bg-gray-600 rounded-full overflow-hidden">
             <span className="px-3 md:px-4 py-1 md:py-1.5 text-white font-medium">3 ตัวล่าง:</span>
             <span className="px-3 md:px-4 py-1 md:py-1.5 bg-[#00cc00] text-white font-medium">
-              {maxBets.threeBottom.left} × {maxBets.threeBottom.right}
+              {maxBets.threeBottomDirect}
             </span>
           </div>
           <div className="flex items-center bg-gray-600 rounded-full overflow-hidden">
             <span className="px-3 md:px-4 py-1 md:py-1.5 text-white font-medium">2 ตัวบน:</span>
             <span className="px-3 md:px-4 py-1 md:py-1.5 bg-[#00cc00] text-white font-medium">
-              {maxBets.twoTop.left} × {maxBets.twoTop.right}
+              {maxBets.twoTopDirect}
             </span>
           </div>
           <div className="flex items-center bg-gray-600 rounded-full overflow-hidden">
             <span className="px-3 md:px-4 py-1 md:py-1.5 text-white font-medium">2 ตัวล่าง:</span>
             <span className="px-3 md:px-4 py-1 md:py-1.5 bg-[#00cc00] text-white font-medium">
-              {maxBets.twoBottom.left} × {maxBets.twoBottom.right}
+              {maxBets.twoBottomDirect}
             </span>
           </div>
         </div>
@@ -212,127 +201,89 @@ export function DashboardHeader() {
       <Dialog open={isEditModalOpen} onOpenChange={(open) => !open && handleCancel()}>
         <DialogContent className="bg-gradient-to-br from-[#2a3442] via-[#2f4a62] to-[#2a3848] border-gray-600 max-w-2xl md:max-w-4xl p-4 md:p-8 flex items-center justify-center">
           <div className="space-y-3 md:space-y-4 w-full">
-            {/* 3 ตัวบน */}
             <div className="bg-gray-700/80 rounded-xl p-4 md:p-6 flex flex-col md:flex-row items-center gap-3 md:gap-4">
               <span className="text-white font-semibold text-lg md:text-2xl min-w-[100px] md:min-w-[120px]">
                 3 ตัวบน
               </span>
               <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto">
                 <Input
-                  ref={threeTopLeftRef}
+                  ref={threeTopDirectRef}
                   type="number"
                   min="0"
-                  value={tempMaxBets.threeTop.left}
-                  onChange={(e) => handleInputChange("threeTop", "left", e.target.value)}
-                  onKeyDown={(e) => handleModalKeyDown(e, threeTopRightRef)}
+                  value={tempMaxBets.threeTopDirect}
+                  onChange={(e) => handleInputChange("threeTopDirect", e.target.value)}
+                  onKeyDown={(e) => handleModalKeyDown(e, threeTopIndirectRef)}
                   className="bg-white border-gray-400 text-gray-900 text-center text-base md:text-xl h-10 md:h-12 flex-1 md:max-w-[150px]"
                   style={{ colorScheme: "light" }}
                 />
                 <span className="text-white text-2xl md:text-3xl font-bold">x</span>
                 <Input
-                  ref={threeTopRightRef}
+                  ref={threeTopIndirectRef}
                   type="number"
                   min="0"
-                  value={tempMaxBets.threeTop.right}
-                  onChange={(e) => handleInputChange("threeTop", "right", e.target.value)}
-                  onKeyDown={(e) => handleModalKeyDown(e, threeBottomLeftRef)}
+                  value={tempMaxBets.threeTopIndirect}
+                  onChange={(e) => handleInputChange("threeTopIndirect", e.target.value)}
+                  onKeyDown={(e) => handleModalKeyDown(e, threeBottomDirectRef)}
                   className="bg-white border-gray-400 text-gray-900 text-center text-base md:text-xl h-10 md:h-12 flex-1 md:max-w-[150px]"
                   style={{ colorScheme: "light" }}
                 />
               </div>
             </div>
 
-            {/* 3 ตัวล่าง */}
             <div className="bg-gray-700/80 rounded-xl p-4 md:p-6 flex flex-col md:flex-row items-center gap-3 md:gap-4">
               <span className="text-white font-semibold text-lg md:text-2xl min-w-[100px] md:min-w-[120px]">
                 3 ตัวล่าง
               </span>
               <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto">
                 <Input
-                  ref={threeBottomLeftRef}
+                  ref={threeBottomDirectRef}
                   type="number"
                   min="0"
-                  value={tempMaxBets.threeBottom.left}
-                  onChange={(e) => handleInputChange("threeBottom", "left", e.target.value)}
-                  onKeyDown={(e) => handleModalKeyDown(e, threeBottomRightRef)}
-                  className="bg-white border-gray-400 text-gray-900 text-center text-base md:text-xl h-10 md:h-12 flex-1 md:max-w-[150px]"
-                  style={{ colorScheme: "light" }}
-                />
-                <span className="text-white text-2xl md:text-3xl font-bold">x</span>
-                <Input
-                  ref={threeBottomRightRef}
-                  type="number"
-                  min="0"
-                  value={tempMaxBets.threeBottom.right}
-                  onChange={(e) => handleInputChange("threeBottom", "right", e.target.value)}
-                  onKeyDown={(e) => handleModalKeyDown(e, twoTopLeftRef)}
-                  className="bg-white border-gray-400 text-gray-900 text-center text-base md:text-xl h-10 md:h-12 flex-1 md:max-w-[150px]"
+                  value={tempMaxBets.threeBottomDirect}
+                  onChange={(e) => handleInputChange("threeBottomDirect", e.target.value)}
+                  onKeyDown={(e) => handleModalKeyDown(e, twoTopDirectRef)}
+                  className="bg-white border-gray-400 text-gray-900 text-center text-base md:text-xl h-10 md:h-12 flex-1 md:max-w-[320px]"
                   style={{ colorScheme: "light" }}
                 />
               </div>
             </div>
 
-            {/* 2 ตัวบน */}
             <div className="bg-gray-700/80 rounded-xl p-4 md:p-6 flex flex-col md:flex-row items-center gap-3 md:gap-4">
               <span className="text-white font-semibold text-lg md:text-2xl min-w-[100px] md:min-w-[120px]">
                 2 ตัวบน
               </span>
               <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto">
                 <Input
-                  ref={twoTopLeftRef}
+                  ref={twoTopDirectRef}
                   type="number"
                   min="0"
-                  value={tempMaxBets.twoTop.left}
-                  onChange={(e) => handleInputChange("twoTop", "left", e.target.value)}
-                  onKeyDown={(e) => handleModalKeyDown(e, twoTopRightRef)}
-                  className="bg-white border-gray-400 text-gray-900 text-center text-base md:text-xl h-10 md:h-12 flex-1 md:max-w-[150px]"
-                  style={{ colorScheme: "light" }}
-                />
-                <span className="text-white text-2xl md:text-3xl font-bold">x</span>
-                <Input
-                  ref={twoTopRightRef}
-                  type="number"
-                  min="0"
-                  value={tempMaxBets.twoTop.right}
-                  onChange={(e) => handleInputChange("twoTop", "right", e.target.value)}
-                  onKeyDown={(e) => handleModalKeyDown(e, twoBottomLeftRef)}
-                  className="bg-white border-gray-400 text-gray-900 text-center text-base md:text-xl h-10 md:h-12 flex-1 md:max-w-[150px]"
+                  value={tempMaxBets.twoTopDirect}
+                  onChange={(e) => handleInputChange("twoTopDirect", e.target.value)}
+                  onKeyDown={(e) => handleModalKeyDown(e, twoBottomDirectRef)}
+                  className="bg-white border-gray-400 text-gray-900 text-center text-base md:text-xl h-10 md:h-12 flex-1 md:max-w-[320px]"
                   style={{ colorScheme: "light" }}
                 />
               </div>
             </div>
 
-            {/* 2 ตัวล่าง */}
             <div className="bg-gray-700/80 rounded-xl p-4 md:p-6 flex flex-col md:flex-row items-center gap-3 md:gap-4">
               <span className="text-white font-semibold text-lg md:text-2xl min-w-[100px] md:min-w-[120px]">
                 2 ตัวล่าง
               </span>
               <div className="flex items-center gap-3 md:gap-4 w-full md:w-auto">
                 <Input
-                  ref={twoBottomLeftRef}
+                  ref={twoBottomDirectRef}
                   type="number"
                   min="0"
-                  value={tempMaxBets.twoBottom.left}
-                  onChange={(e) => handleInputChange("twoBottom", "left", e.target.value)}
-                  onKeyDown={(e) => handleModalKeyDown(e, twoBottomRightRef)}
-                  className="bg-white border-gray-400 text-gray-900 text-center text-base md:text-xl h-10 md:h-12 flex-1 md:max-w-[150px]"
-                  style={{ colorScheme: "light" }}
-                />
-                <span className="text-white text-2xl md:text-3xl font-bold">x</span>
-                <Input
-                  ref={twoBottomRightRef}
-                  type="number"
-                  min="0"
-                  value={tempMaxBets.twoBottom.right}
-                  onChange={(e) => handleInputChange("twoBottom", "right", e.target.value)}
+                  value={tempMaxBets.twoBottomDirect}
+                  onChange={(e) => handleInputChange("twoBottomDirect", e.target.value)}
                   onKeyDown={(e) => handleModalKeyDown(e, null)}
-                  className="bg-white border-gray-400 text-gray-900 text-center text-base md:text-xl h-10 md:h-12 flex-1 md:max-w-[150px]"
+                  className="bg-white border-gray-400 text-gray-900 text-center text-base md:text-xl h-10 md:h-12 flex-1 md:max-w-[320px]"
                   style={{ colorScheme: "light" }}
                 />
               </div>
             </div>
 
-            {/* Action buttons */}
             <div className="flex justify-between gap-4 pt-2 md:pt-4">
               <Button
                 onClick={handleCancel}

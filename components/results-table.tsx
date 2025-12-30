@@ -212,19 +212,19 @@ export function ResultsTable() {
     }
   }
 
-  const formatCategory = (category: string) => {
-    switch (category) {
-      case "3_top":
-        return "3 ตัวบน"
-      case "3_bottom":
-        return "3 ตัวล่าง"
-      case "2_top":
-        return "2 ตัวบน"
-      case "2_bottom":
-        return "2 ตัวล่าง"
-      default:
-        return category
-    }
+  const formatCategory = (category: string, bet_type: string) => {
+    const baseName =
+      category === "3_top"
+        ? "3 ตัวบน"
+        : category === "3_bottom"
+          ? "3 ตัวล่าง"
+          : category === "2_top"
+            ? "2 ตัวบน"
+            : "2 ตัวล่าง"
+
+    const typeName = bet_type === "direct" ? "ตรง" : "โต๊ด"
+
+    return `${baseName}${typeName}`
   }
 
   const formatBetType = (type: string) => {
@@ -272,11 +272,11 @@ export function ResultsTable() {
               >
                 ประเภท {sortConfig.key === "category" && (sortConfig.direction === "asc" ? "↑" : "↓")}
               </TableHead>
-              <TableHead className="text-center text-white font-semibold text-base border-r-2 border-gray-500">
-                ตรง
-              </TableHead>
-              <TableHead className="text-center text-white font-semibold text-base border-r-2 border-gray-500">
-                โต๊ด
+              <TableHead
+                className="text-center text-white font-semibold text-base border-r-2 border-gray-500 cursor-pointer hover:bg-gray-600"
+                onClick={() => handleSort("amount")}
+              >
+                จำนวน {sortConfig.key === "amount" && (sortConfig.direction === "asc" ? "↑" : "↓")}
               </TableHead>
               <TableHead className="text-center text-white font-semibold text-base border-r-2 border-gray-500">
                 หมายเหตุ
@@ -287,13 +287,13 @@ export function ResultsTable() {
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-[400px] text-center text-gray-400 bg-gray-800/50">
+                <TableCell colSpan={6} className="h-[400px] text-center text-gray-400 bg-gray-800/50">
                   กำลังโหลดข้อมูล...
                 </TableCell>
               </TableRow>
             ) : paginatedBets.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-[400px] text-center text-gray-400 bg-gray-800/50">
+                <TableCell colSpan={6} className="h-[400px] text-center text-gray-400 bg-gray-800/50">
                   ไม่มีข้อมูล
                 </TableCell>
               </TableRow>
@@ -306,46 +306,22 @@ export function ResultsTable() {
                     <TableCell className="text-center text-white border-r-2 border-gray-600">{bet.cus_name}</TableCell>
                     <TableCell className="text-center text-white border-r-2 border-gray-600">{bet.lot_num}</TableCell>
                     <TableCell className="text-center text-white border-r-2 border-gray-600">
-                      {formatCategory(bet.category)}
+                      {formatCategory(bet.category, bet.bet_type)}
                     </TableCell>
                     <TableCell className="text-center text-white border-r-2 border-gray-600">
-                      {bet.bet_type === "direct" ? (
-                        isEditing ? (
-                          <Input
-                            value={editAmount}
-                            onChange={(e) => {
-                              if (e.target.value === "" || /^\d+$/.test(e.target.value)) {
-                                setEditAmount(e.target.value)
-                              }
-                            }}
-                            className="w-20 mx-auto bg-white text-gray-900 text-center"
-                            style={{ colorScheme: "light" }}
-                          />
-                        ) : (
-                          bet.amount
-                        )
+                      {isEditing ? (
+                        <Input
+                          value={editAmount}
+                          onChange={(e) => {
+                            if (e.target.value === "" || /^\d+$/.test(e.target.value)) {
+                              setEditAmount(e.target.value)
+                            }
+                          }}
+                          className="w-20 mx-auto bg-white text-gray-900 text-center"
+                          style={{ colorScheme: "light" }}
+                        />
                       ) : (
-                        "-"
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center text-white border-r-2 border-gray-600">
-                      {bet.bet_type === "indirect" ? (
-                        isEditing ? (
-                          <Input
-                            value={editAmount}
-                            onChange={(e) => {
-                              if (e.target.value === "" || /^\d+$/.test(e.target.value)) {
-                                setEditAmount(e.target.value)
-                              }
-                            }}
-                            className="w-20 mx-auto bg-white text-gray-900 text-center"
-                            style={{ colorScheme: "light" }}
-                          />
-                        ) : (
-                          bet.amount
-                        )
-                      ) : (
-                        "-"
+                        bet.amount
                       )}
                     </TableCell>
                     <TableCell className="text-center border-r-2 border-gray-600">

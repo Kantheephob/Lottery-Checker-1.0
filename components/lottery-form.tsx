@@ -14,7 +14,7 @@ type LotteryEntry = {
   topStraight: string
   topPermutation: string
   bottomStraight: string
-  bottomPermutation: string
+  // bottomPermutation: string // Removed
   timestamp: number
 }
 
@@ -24,19 +24,16 @@ export function LotteryForm() {
   const [topStraight, setTopStraight] = useState("")
   const [topPermutation, setTopPermutation] = useState("")
   const [bottomStraight, setBottomStraight] = useState("")
-  const [bottomPermutation, setBottomPermutation] = useState("")
+  // const [bottomPermutation, setBottomPermutation] = useState("") // Removed
 
   const buyerRef = useRef<HTMLInputElement>(null)
   const numberRef = useRef<HTMLInputElement>(null)
   const topStraightRef = useRef<HTMLInputElement>(null)
   const topPermutationRef = useRef<HTMLInputElement>(null)
   const bottomStraightRef = useRef<HTMLInputElement>(null)
-  const bottomPermutationRef = useRef<HTMLInputElement>(null)
+  // const bottomPermutationRef = useRef<HTMLInputElement>(null) // Removed
 
-  const handleKeyDown = (
-    e: KeyboardEvent<HTMLInputElement>,
-    nextRef: React.RefObject<HTMLInputElement | null> | null,
-  ) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, nextRef: React.RefObject<HTMLInputElement | null> | null) => {
     if (e.key === "Enter") {
       e.preventDefault()
       if (nextRef?.current) {
@@ -66,6 +63,15 @@ export function LotteryForm() {
     }
   }
 
+  const handleTopPermutationChange = (value: string) => {
+    // Check if trying to enter value for 2-digit number (which doesn't support indirect)
+    if (value && number.length === 2) {
+      alert("เลข 2 หลักไม่มีประเภทโต๊ด มีเฉพาะตรงเท่านั้น")
+      return
+    }
+    handleTableInputChange(value, setTopPermutation)
+  }
+
   const handleAdd = async () => {
     // Validate required fields
     if (!buyer.trim() || !number.trim()) {
@@ -79,8 +85,12 @@ export function LotteryForm() {
       return
     }
 
-    // Check if at least one bet amount is entered
-    if (!topStraight && !topPermutation && !bottomStraight && !bottomPermutation) {
+    if (topPermutation && number.length === 2) {
+      alert("เลข 2 หลักไม่มีประเภทโต๊ด มีเฉพาะตรงเท่านั้น")
+      return
+    }
+
+    if (!topStraight && !topPermutation && !bottomStraight) {
       alert("กรุณากรอกยอดเดิมพันอย่างน้อย 1 ช่อง")
       return
     }
@@ -154,17 +164,17 @@ export function LotteryForm() {
       if (topStraight) {
         betsToInsert.push({
           order_id: orderId,
-          bet_number: Number.parseInt(number),
+          bet_number: number, // Keep as string to support leading zeros
           category: topCategory,
           bet_type: "direct",
           amount: Number.parseInt(topStraight),
         })
       }
 
-      if (topPermutation) {
+      if (topPermutation && is3Digit) {
         betsToInsert.push({
           order_id: orderId,
-          bet_number: Number.parseInt(number),
+          bet_number: number,
           category: topCategory,
           bet_type: "indirect",
           amount: Number.parseInt(topPermutation),
@@ -174,20 +184,10 @@ export function LotteryForm() {
       if (bottomStraight) {
         betsToInsert.push({
           order_id: orderId,
-          bet_number: Number.parseInt(number),
+          bet_number: number,
           category: bottomCategory,
           bet_type: "direct",
           amount: Number.parseInt(bottomStraight),
-        })
-      }
-
-      if (bottomPermutation) {
-        betsToInsert.push({
-          order_id: orderId,
-          bet_number: Number.parseInt(number),
-          category: bottomCategory,
-          bet_type: "indirect",
-          amount: Number.parseInt(bottomPermutation),
         })
       }
 
@@ -203,7 +203,7 @@ export function LotteryForm() {
       setTopStraight("")
       setTopPermutation("")
       setBottomStraight("")
-      setBottomPermutation("")
+      // setBottomPermutation("") // Removed
 
       // Trigger a page refresh to update tables
       window.dispatchEvent(new Event("lottery-update"))
@@ -219,7 +219,7 @@ export function LotteryForm() {
     setTopStraight("")
     setTopPermutation("")
     setBottomStraight("")
-    setBottomPermutation("")
+    // setBottomPermutation("") // Removed
   }
 
   return (
@@ -296,7 +296,7 @@ export function LotteryForm() {
             <Input
               ref={topPermutationRef}
               value={topPermutation}
-              onChange={(e) => handleTableInputChange(e.target.value, setTopPermutation)}
+              onChange={(e) => handleTopPermutationChange(e.target.value)}
               onKeyDown={(e) => handleKeyDown(e, bottomStraightRef)}
               className="w-20 md:w-32 text-center bg-white border-0 text-gray-900 text-sm md:text-base"
               style={{ colorScheme: "light" }}
@@ -309,21 +309,11 @@ export function LotteryForm() {
               ล่าง
             </span>
           </div>
-          <div className="border-r-2 border-gray-500 flex items-center justify-center p-2 md:p-4 bg-gray-800/30">
+          <div className="col-span-2 flex items-center justify-center p-2 md:p-4 bg-gray-800/30">
             <Input
               ref={bottomStraightRef}
               value={bottomStraight}
               onChange={(e) => handleTableInputChange(e.target.value, setBottomStraight)}
-              onKeyDown={(e) => handleKeyDown(e, bottomPermutationRef)}
-              className="w-20 md:w-32 text-center bg-white border-0 text-gray-900 text-sm md:text-base"
-              style={{ colorScheme: "light" }}
-            />
-          </div>
-          <div className="flex items-center justify-center p-2 md:p-4 bg-gray-800/30">
-            <Input
-              ref={bottomPermutationRef}
-              value={bottomPermutation}
-              onChange={(e) => handleTableInputChange(e.target.value, setBottomPermutation)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault()

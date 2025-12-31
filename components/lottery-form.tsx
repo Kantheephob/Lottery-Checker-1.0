@@ -63,12 +63,23 @@ export function LotteryForm() {
     }
   }
 
+  const hasAllSameDigits = (num: string) => {
+    if (num.length !== 3) return false
+    return num[0] === num[1] && num[1] === num[2]
+  }
+
   const handleTopPermutationChange = (value: string) => {
     // Check if trying to enter value for 2-digit number (which doesn't support indirect)
     if (value && number.length === 2) {
       alert("เลข 2 หลักไม่มีประเภทโต๊ด มีเฉพาะตรงเท่านั้น")
       return
     }
+
+    if (value && number.length === 3 && hasAllSameDigits(number)) {
+      alert("เลขที่มีตัวเลขซ้ำกันทั้งหมด (เช่น 111, 222, 333) ไม่สามารถเล่นโต๊ดได้ สามารถเล่นตรงเท่านั้น")
+      return
+    }
+
     handleTableInputChange(value, setTopPermutation)
   }
 
@@ -87,6 +98,11 @@ export function LotteryForm() {
 
     if (topPermutation && number.length === 2) {
       alert("เลข 2 หลักไม่มีประเภทโต๊ด มีเฉพาะตรงเท่านั้น")
+      return
+    }
+
+    if (topPermutation && number.length === 3 && hasAllSameDigits(number)) {
+      alert("เลขที่มีตัวเลขซ้ำกันทั้งหมด (เช่น 111, 222, 333) ไม่สามารถเล่นโต๊ดได้ สามารถเล่นตรงเท่านั้น")
       return
     }
 

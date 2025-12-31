@@ -6,6 +6,7 @@ import { Search, Pencil, Trash2, Check, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { generatePermutations, arePermutations } from "@/lib/utils/permutations"
 
 type BetData = {
   bet_id: string
@@ -100,6 +101,42 @@ export function ResultsTable() {
   }
 
   const calculateWarning = (bet: BetData): string | null => {
+    if (bet.bet_type === "indirect" && bet.lot_num.length === 3) {
+      const allPermutations = generatePermutations(bet.lot_num)
+      const exceededPermutations: string[] = []
+
+      for (const permutation of allPermutations) {
+        // Find all indirect bets that include this permutation
+        const relatedBets = bets.filter(
+          (b) =>
+            b.category === bet.category &&
+            b.bet_type === "indirect" &&
+            b.lot_num.length === 3 &&
+            arePermutations(b.lot_num, permutation),
+        )
+
+        const total = relatedBets.reduce((sum, b) => sum + b.amount, 0)
+
+        // Find the limit for this category and bet type
+        const limit = betLimits.find((l) => l.category === bet.category && l.bet_type === bet.bet_type)
+
+        if (limit && total > limit.max_amount) {
+          // Find the newest bet that contributes to this specific permutation
+          const newestBet = relatedBets.reduce((newest, current) =>
+            new Date(current.created_at) > new Date(newest.created_at) ? current : newest,
+          )
+
+          // Only show warning on the newest bet for this permutation
+          if (newestBet.bet_id === bet.bet_id) {
+            const exceeded = total - limit.max_amount
+            exceededPermutations.push(`โต๊ด ${permutation} เกิน ${exceeded}`)
+          }
+        }
+      }
+
+      return exceededPermutations.length > 0 ? exceededPermutations.join(", ") : null
+    }
+
     // Calculate total for this lottery number, category, and bet type
     const sameBets = bets.filter(
       (b) =>
@@ -201,14 +238,28 @@ export function ResultsTable() {
 
     try {
       const supabase = createClient()
-      const { error } = await supabase.from("bets").delete().eq("bet_id", betId)
 
-      if (error) throw error
+      console.log("[v0] Attempting to delete bet:", betId)
 
+      const { data, error } = await supabase.from("bets").delete().eq("bet_id", betId).select()
+
+      if (error) {
+        console.error("[v0] Delete error:", error)
+        throw error
+      }
+
+      console.log("[v0] Successfully deleted bet:", data)
+
+      // Trigger refresh
       await loadBetsAndLimits()
-    } catch (error) {
+
+      // Dispatch event to update other tables
+      window.dispatchEvent(new Event("lottery-update"))
+
+      alert("ลบข้อมูลสำเร็จ")
+    } catch (error: any) {
       console.error("[v0] Error deleting bet:", error)
-      alert("เกิดข้อผิดพลาดในการลบข้อมูล")
+      alert(`เกิดข้อผิดพลาดในการลบข้อมูล: ${error.message || "Unknown error"}`)
     }
   }
 
